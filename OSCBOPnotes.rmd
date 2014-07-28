@@ -11,7 +11,10 @@ output:
 <!--- 
 http://www.molecularecologist.com/2013/11/using-github-with-r-and-rstudio/
 
-rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", output_dir="E:\\Temp")
+rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", output_dir="E:\\Temp", intermediates_dir="E:\\Temp")
+
+rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document")
+
 -->
 
 
