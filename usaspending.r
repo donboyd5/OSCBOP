@@ -1,6 +1,6 @@
 # usaspending.r
 # Don Boyd
-# 7/282014
+# 7/28/2014
 
 # http://www.usaspending.gov/datafeeds/2014_All_Contracts_Full_20140515.csv.zip
 
