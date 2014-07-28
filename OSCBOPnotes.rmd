@@ -17,19 +17,51 @@ rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_
 
 -->
 
+```{r globalOptions, include=FALSE}
+# include=FALSE means don't put chunk output in the final output document, but still do run the code
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# devtools::install_github("donboyd5/btools") # install btools if not already installed
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# libraries I always want loaded
+library(btools) # library that I created (see above for installation)
+library(foreign) # various import and export routines - e.g., for reading Stata files
+library(gdata) # for reading spreadsheets
+library(ggplot2)
+library(scales) # so we can use scales with ggplot2
+library(plyr) # needed for ddply [but was it already loaded??]
+library(reshape2)
+library(tidyr)
+library(dplyr) # always load AFTER plyr
+library(knitr)
 
-```{r}
-summary(cars)
+# define global chunk options, which can be overridden in individual chunks
+opts_chunk$set(fig.width=9, fig.height=6.43, fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE)
+options(width=160) # set to 120 for html output, 80 for pdf output
+
 ```
 
-You can also embed plots, for example:
 
-```{r, echo=FALSE}
-plot(cars)
+
+```{r mainDefinitions, include=FALSE, cache=FALSE}
+# note that when cache=TRUE it does not remember the functions that are loaded in the chunk, so use that option only for creating
+# data (I think)
+# source("E:\\R\\RPrograms\\BoydStartup.r", echo=FALSE)  # only needed for the getdata() function
+
+# define directories
+# dropdir <- "E:\\Dropbox\\PEW\\"
+
+bopd <- "E:\\Data\\Projects\\OSC BOP\\"
+
+fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
+
+
+
+# constants we'll almost always need    ####
+# API keys
+beaapikey <- "21F782AD-56A6-439D-B3D5-9A592F020E26"
+censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
