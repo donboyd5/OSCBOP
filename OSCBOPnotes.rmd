@@ -13,6 +13,7 @@ http://www.molecularecologist.com/2013/11/using-github-with-r-and-rstudio/
 
 TO STOP TRACKING A FILE:
 http://git-scm.com/docs/gitignore
+add the filename to the gitignore file for the project
 
 To stop tracking a file that is currently tracked, use 'git rm --cached'.
 For example - open the git gui (right-click from Windows Explorer in the project directory) and do
@@ -42,6 +43,10 @@ library(tidyr)
 library(dplyr) # always load AFTER plyr
 library(knitr)
 
+# next 2 are so that we can read and display screenshots, etc.
+library(jpeg)
+library(grid)
+
 # define global chunk options, which can be overridden in individual chunks
 opts_chunk$set(fig.width=9, fig.height=6.43, fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE)
 options(width=160) # set to 120 for html output, 80 for pdf output
@@ -65,13 +70,70 @@ fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
 # abc
 
 # constants we'll almost always need    ####
+
+# USASpending constants - file name prefixes
+fngrants <- "_All_Grants_Full_"
+fbdp <- "_All_DirectPayments_Full_"
+fncon <- "_All_Contracts_Full_"
+fnloans <- "_All_Loans_Full_"
+fninsur <- "_All_Insurance_Full_"
+
+usasver <- "20140515" # version number of latest set of USASpending files
+
 # API keys
 beaapikey <- "21F782AD-56A6-439D-B3D5-9A592F020E26"
 censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 
 ```
 
-# This is the start
+```{r downloads, eval=FALSE}
+# download any needed files
+
+
+# ```{r fig.width=1, fig.height=10}
+# library(png)
+# library(grid)
+# img <- readPNG(path/to/your/image)
+#  grid.raster(img)
+# ```
+
+```
+
+
+# Federal budget overview
+FFY 2013 ended Sept 30, 2013 and we have reasonably complete data, so this is the year to use.
+
+The “Historical Tables” (http://www.whitehouse.gov/omb/budget/Historicals) are a key source of information on the federal budget. Here is a snapshot of recent years from HT Table 1.1. The federal budget deficit peaked at $1.3 trillion in FFY 2011 and fell to $680 billion in 2013. These are the official federal deficit numbers.
+
+<img src="E:\\R\\11khr.png" height="400px" width="300px" />
+
+<img src="E:\\R\\RPrograms\\OSCBOP\\Images\\temp.jpg" />
+
+<img src="E:\\R\\RPrograms\\OSCBOP\\Images\\temp.jpg" height="200px" width="300px" />
+
+
+```{r fig.width=6.5}
+# <img src="E:\\R\\RPrograms\\OSCBOP\\Images\\temp.jpg" height="200px" width="300px" /> put this in open text area
+img <- readJPEG("E:\\R\\RPrograms\\OSCBOP\\Images\\temp.jpg")
+grid.raster(img)
+
+img2 <- readJPEG("E:\\R\\RPrograms\\OSCBOP\\Images\\temp.jpg", native=TRUE)
+# rasterImage(img2, 100, 300, 150, 350)
+# rasterImage(img2, 1.5, 1.5, 1.9, 1.8)
+# plot(img2)
+grid.raster(img2)
+# plot(img, type="n")
+#plot(1, type="n", xlim=c(100, 200), ylim=c(300, 350))
+# rasterImage(test,100, 300, 150, 350)
+
+#  library(EBImage)
+#  > x = readImage('lena.gif') 
+#  > display(x) 
+
+```
+
+
+
 ## and this is 2
 ### this is 3
 #### or this is 4
