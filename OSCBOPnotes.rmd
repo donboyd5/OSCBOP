@@ -109,6 +109,9 @@ Two possible approaches:
 
 The attraction of the former is it allows us to get at the balance of payments concept but it forces us to come up with proxies to allocate the budget. The advantage of the latter is that it requires fewer assumptions, but then we don’t foot to the full budget. I believe the first approach is best for our purposes as long as we think we have reasonable proxies – an issue we currently are exploring.
 
+## Authority, obligations or outlays?
+Per the 1999 Moynihan report (p.109), "The dollar amounts reported by the Census Bureau in the CFFR report can represent either actual expenditures or obligations. As a general guide, the grants and procurement data in the CFFR report represent obligated funds, while the salaries, wages and direct payments show actual expenditures.""
+
 ## How the Moynihan report addressed this issue
 Moynihan/KSG appear to have used a variant of #2: As far as I can tell, they added up all spending in CFFR, and treated that as the totality of federal spending, and then allocated a like amount of taxes (to force a balanced budget). That worked for them, I believe, because the CFFR accounted for about “four fifths” of federal outlays, per the 1999 fisc report. Per the Moynihan report:
 
@@ -130,9 +133,26 @@ Total spending in 2013 on this basis was $3.455 trillion.
 
 When we look at USASpending we appear to come up about $450-500 billion short. The table below shows $2.5 trillion of spending, plus another $467 billion we know about from personnel data. The two together are about 87% of federal outlays.
 
-
 <img src="E:\\R\\RPrograms\\OSCBOP\\Images\\usaspendingfy2013totals.jpg" />
 
+
+
+```{r appendices, child=paste0("subGrants.Rmd"), eval=TRUE}
+# don't put anything else here - it WILL NOT BE RUN!
+```
+
+```{r appendices, child=paste0("subAppendices.Rmd"), eval=FALSE}
+# don't put anything else here - it WILL NOT BE RUN!
+```
+
+```{r appendices, child=paste0("subAppendices.Rmd"), eval=FALSE}
+# don't put anything else here - it WILL NOT BE RUN!
+```
+
+
+```{r appendices, child=paste0("subAppendices.Rmd"), eval=FALSE}
+# don't put anything else here - it WILL NOT BE RUN!
+```
 
 
 

@@ -1,0 +1,46 @@
+---
+title: "subAppendices"
+author: "Don Boyd"
+---
+
+# Appendix:  Snapshot of 2013 federal spending, and related data sources
+## Federal budget spending concepts
+The official numbers in the federal budget for receipts, outlays, and surplus or deficit are on a cash basis. The federal government does have a financial report using some GAAP-like concepts (http://fms.treas.gov/fr/index.html), but few people look at it.
+
+Unlike the states, the federal government does not have a separate capital budget. Spending numbers include capital spending. But unlike states, for the most part the federal government is not building roads, bridges, schools, prisons, water and sewer systems, and the like: the bulk of the nation’s public infrastructure spending is done mainly by states and localities.
+
+You’ll note in Historical Tables 1.1 (see way above) that the total budget is broken down into on-budget and off-budget spending and revenue. “Off-budget refers to transactions of the Federal Government that would be treated as budgetary had the Congress not designated them by statute as “off-budget.” Currently, transactions of the Social Security trust funds and the Postal Service are the only sets of transactions that are so designated.” (Budget Concepts p.109) [However, the budget shows the Postal Service on a net basis – the net subsidy to the Postal Service – rather than showing receipts and outlays separately. The net subsidy in 2013 on an outlays basis appears to have been about $2 billion, so it is pocket change in the overall budget, measured this way. See HT 3.2.]
+
+### Budget authority, obligations, and outlays
+There are 3 main terms related to federal spending: budget authority (similar to appropriations), obligations (binding commitments to spend), and outlays (most cash disbursements). In general but with some exceptions, the sequence is that first the federal government provides budgetary authority to spend, then agencies make commitments to spend, thereby obligating funds, then funds are spent (outlays).
+
+Quotes below (bulleted) are from the Analytical Perspectives volume of the FFY 2015 budget (http://www.whitehouse.gov/omb/budget/Analytical_Perspectives), Chapter 9 Budget Concepts (http://www.whitehouse.gov/sites/default/files/omb/budget/fy2015/assets/concepts.pdf), unless noted otherwise.
+
+#### In general
+* Budget authority, obligations, and outlays are the primary benchmarks and measures of the budget control system. The Congress enacts laws that provide agencies with spending authority in the form of budget authority. Before agencies can use these resources—obligate this budget authority—OMB must approve their spending plans. After the plans are approved, agencies can enter into binding agreements to purchase items or services or to make grants or other payments. These agreements are recorded as obligations of the United States and deducted from the amount of budgetary resources available to the agency. When payments are made, the obligations are liquidated and outlays recorded. (Concepts, p.97)
+
+#### Budget authority
+* Budget authority is the authority provided in law to enter into legal obligations that will result in immediate or future outlays of the Government. In other words, it is the amount of money that agencies are allowed to commit to be spent in current or future years. Government officials may obligate the Government to make outlays only to the extent they have been granted budget authority…. When permitted by law, unobligated balances of budget authority may be carried over and used in the next year. The budget does not record these balances as budget authority again. (Concepts, p.98)
+
+#### Obligations
+* Following the enactment of budget authority and the completion of required apportionment action, Government agencies incur obligations to make payments (see earlier discussion under “Budget Execution”). Agencies must record obligations when they enter into binding agreements that will result in immediate or future outlays. (Concepts, p.100)
+
+##### Timing of obligations
+Source: (OMB Circular A-11, Section 20, pp.22+ (http://www.whitehouse.gov/sites/default/files/omb/assets/a11_current_year/s20.pdf)
+
+* When you place an order, sign a contract, award a grant, purchase a service, or take other actions that require the Government to make payments to the public or from one Government account to another, you incur an obligation…. the account must have budget authority sufficient to cover the total of such obligations at the time the obligation is incurred. (A-11 S20 p.22)
+
+* For personnel compensation and benefits… the amounts generally are recorded as obligations as the amounts are earned during the reporting pay period. (A-11 S20 p.22)
+
+* Contractual services and supplies. Services and supplies that are purchased by contract are recorded as obligations at the time there is a binding agreement, which is usually when the contract is signed. As a general rule, the amount of the obligation is the maximum liability to the Federal Government. The maximum liability to the Government is normally limited by the terms of the contract (e.g., cancellation clauses). (A-11 S20 p.23)
+
+* Intragovernmental services and supplies. Obligations are incurred for services when they are rendered. ... Obligations are incurred for supplies when the order is placed. (A-11 S20 p.24)
+
+* Grants and fixed charges. Discretionary grants will be obligated after the amounts are determined administratively and recorded at the time the grant award is signed. …For grants and fixed charges with formulas in law that automatically fix the amount of the charges, record the amount determined by the formula or, if there is an appropriation, then record the amount appropriated, whichever is smaller. The obligation is reported at the time the grantee is awarded the grant and is liquidated when the payment is made to the grantee. (A-11 S20 p.25)
+
+#### Outlays
+* Outlays are the measure of Government spending. They are payments that liquidate obligations (other than most exchanges of financial instruments, of which the repayment of debt is the prime example). The budget records outlays when obligations are paid, in the amount that is paid. (Concepts, p.100) [For details on what is and is not an outlay see A-11 S20.]
+
+## The Federal Budget Public Database
+The public database (http://www.whitehouse.gov/omb/budget/Supplemental) has detailed files on budget outlays, budget authority, and receipts. It does not have data on obligations. It provides considerably more detail than the Historical Tables, and foots to those tables.
+
