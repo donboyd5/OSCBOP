@@ -10,6 +10,10 @@ output:
 
 <!--- 
 http://www.molecularecologist.com/2013/11/using-github-with-r-and-rstudio/
+http://git-scm.com/docs/gitignore
+To stop tracking a file that is currently tracked, use 'git rm --cached'.
+For example - open the git gui and do
+  git rm --cached OSCBOPnotes.html
 
 rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", output_dir="E:\\Temp", intermediates_dir="E:\\Temp")
 
@@ -64,7 +68,7 @@ censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 ```
 
 # This is the start
-## and this is second
+## and this is 2
 ### this is 3
 #### or this is 4
 
