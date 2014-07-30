@@ -1,0 +1,226 @@
+---
+title: "subGrants"
+author: "Don Boyd"
+---
+
+
+# Grants analysis
+
+```{r, eval=FALSE}
+# get ALL grants data and save subset so that we can save time; eventually try to do with caching
+system.time(dfall <- readRDS(paste0(grantsd, "grants2013.rds"))) # this seems to be slow so avoid doing each time
+
+vars <- c("recipient_state_code", "cfda_program_num", "cfda_program_title", "recip_cat_type","recipient_type",
+          "asst_cat_type", "fed_funding_amount")
+df <- dfall %>%
+  select(eval(uvf(vars))) %>%
+  mutate(valuem=fed_funding_amount / 1e6, stname=getstname(recipient_state_code))
+saveRDS(df, paste0(grantsd, "grants2013trim.rds"))
+
+
+# now FFIS grants
+fn <- "Database_Master_Spreadsheet_PB_2015_subscribers.xlsx"
+sheet <- "Detailed Program Information"
+dff <- read.xls(paste0(ffisd, fn), sheet=sheet, colClasses="character")
+dff2 <- dff[-c(1:2), 2:20]
+head(dff2)
+vnames <- c("state", "cfda", "program", "elim", "descman", "covex", paste0("fy", 2006:2011),"src2011","fy2012",
+            "src2012", "xtype2012", "fy2013", "src2013", "xtype2013")
+cbind(vnames, names(dff2))
+names(dff2) <- vnames
+ht(dff2)
+dfl <- dff2 %>% gather(fyear, value, starts_with("fy")) %>%
+  mutate(value=cton(value), fyear=cton(substr(fyear, 3, 6)))
+saveRDS(dfl, paste0(ffisd, "ffisgrants.rds"))
+# dfl <- readRDS(paste0(ffisd, "ffisgrants.rds"))
+
+```
+
+
+```{r}
+# get the "slim" subset of data, or full data
+df <- readRDS(paste0(grantsd, "grants2013trim.rds"))
+# df <- readRDS(paste0(grantsd, "grants2013.rds"))
+
+# names(df)
+# vars <- c("unique_transaction_id","statecode", "pop_state_code","obligatedamount")
+# don <- df %>% select(eval(uvf(vars))) %>% 
+#   group_by(statecode) %>%
+#   summarise(totoblig=sum(obligatedamount, na.rm=true)/1e9) %>%
+#   arrange(-totoblig)
+# don
+
+# count(df, "recipient_state_code")
+
+# nyg<-subset(df,recipient_state_code=="NY")
+# count(nyg,c("recip_cat_type","recipient_type"))
+# nyg$rcat<-substr(nyg$recipient_type,1,2)
+# count(nyg,c("rcat","recipient_type"))
+# 
+# nyg$fedm<-nyg$fed_funding_amount/1e6
+# ddply(subset(nyg,rcat<="06"),.(recipient_type),summarise,sum=round(sum(fedm,na.rm=TRUE),3))
+# head(nyg)
+# 
+# catg<-ddply(nyg,.(recipient_type,maj_agency_cat),summarise,sum=round(sum(fedm,na.rm=TRUE),3))
+# local<-subset(nyg,rcat>="01" & rcat<="06")
+# head(local)
+# names(local)
+# keepvars<-c("cfda_program_num","cfda_program_title","recipient_name","recipient_type","fedm")
+# l2<-local[,keepvars]
+# head(local)
+# head(l2)
+# head(arrange(l2,-fedm))
+# subset(l2,cfda_program_num=="93.600")
+# 
+# loccfda<-ddply(l2,.(cfda_program_num,cfda_program_title),summarise,sum=round(sum(fedm,na.rm=TRUE),3))
+# head(arrange(loccfda,-sum))
+# 
+# don<-subset(nyg,cfda_program_num=="93.600")
+# don<-arrange(don,-fedm)
+# head(don)
+```
+
+## USASpending grants
+
+Total USASpending grants in FFY 2013 were $`r sum(df$valuem, na.rm=TRUE) / 1e3` billion
+
+### USASpending grants by geography
+```{r usasgg}
+
+vars <- c("recipient_state_code", "valuem")
+df2 <- df %>% select(eval(uvf(vars))) %>%
+  mutate(stateorDC=(recipient_state_code %in% c("DC", state.abb)), stname=getstname(recipient_state_code)) %>%
+  group_by(stateorDC, recipient_state_code, stname) %>%
+  summarise(totgrantsb=sum(valuem, na.rm=TRUE) / 1e3) %>%
+  arrange(stateorDC, -totgrantsb)
+
+cat("USASpending grants in billions, FFY 2013, by state/DC or not state/DC")
+tbl <- df2 %>% group_by(stateorDC) %>% summarise(totgrantsb=sum(totgrantsb, na.rm=TRUE))
+kable(tbl, digits=3)
+
+cat("USASpending grants in billions, FFY 2013, by state (+DC)")
+tbl <- df2 %>% filter(stateorDC==TRUE) %>% ungroup() %>% select(-stateorDC)
+kable(tbl, digits=3)
+
+cat("USASpending grants in billions, FFY 2013, for non-state geographies")
+tbl <- df2 %>% filter(stateorDC==FALSE) %>% ungroup() %>% select(-stateorDC)
+kable(tbl, digits=3)
+
+```
+
+
+### USASpending grants by program
+```{r usasgp, results='asis'}
+
+vars <- c("cfda_program_num", "cfda_program_title", "valuem")
+tot <- sum(df$fed_funding_amount, na.rm=TRUE) / 1e9
+df2 <- df %>% select(eval(uvf(vars))) %>%
+  group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(totgrantsb=sum(valuem, na.rm=TRUE) / 1e3) %>%
+  arrange(-totgrantsb) %>% 
+  ungroup() %>%
+  mutate(cumsum=cumsum(totgrantsb), pct=totgrantsb / tot * 100, cumpct=cumsum / tot * 100)
+
+cat("USASpending grants in billions, FFY 2013, top 50 programs")
+kable(df2[1:50, ], digits=2)
+
+```
+
+### USASpending grants by recipient type
+```{r usasgt, results='asis'}
+
+tot <- sum(df$fed_funding_amount, na.rm=TRUE) / 1e9
+vars <- c("recip_cat_type", "recipient_type", "asst_cat_type", "valuem")
+
+# df2 <- df %>% select(eval(uvf(vars))) %>%
+#   group_by(recip_cat_type) %>%
+#   summarise(totgrantsb=sum(valuem, na.rm=TRUE) / 1e3)
+# 
+# cat("\nUSASpending grants in billions, FFY 2013, by recipient category type")
+# kable(df2, digits=2)
+
+df2 <- df %>% select(eval(uvf(vars))) %>%
+  group_by(recipient_type) %>%
+  summarise(totgrantsb=sum(valuem, na.rm=TRUE) / 1e3)
+
+cat("\nUSASpending grants in billions, FFY 2013, by recipient type")
+kable(df2, digits=2)
+
+
+```
+
+
+## FFIS grants
+```{r ffisg}
+dfl <- readRDS(paste0(ffisd, "ffisgrants.rds"))
+# ht(dfl)
+
+cat("\nFFIS grants in billions, by federal fiscal year")
+# kable(df2, digits=2)
+dfl %>% filter(state!="National Total") %>% group_by(fyear) %>% summarise(value=sum(value, na.rm=TRUE) / 1e6)
+
+```
+
+
+## Comparison of USASpending grants and FFIS grants: 75 largest differences
+
+```{r, results='asis'}
+dff <- readRDS(paste0(ffisd, "ffisgrants.rds"))
+# ht(dff)
+dfu <- readRDS(paste0(grantsd, "grants2013trim.rds"))
+# anyDuplicated(dfu$cfda)
+# ht(dfu)
+
+# FFIS has duplicate cfdas, so I collapse by cfda and compare using the usas name
+dfa <- dff %>% filter(fyear==2013 & state!="National Total") %>%
+  select(cfda, ffisname=program, value) %>%
+  group_by(cfda) %>%
+  summarise(ffis=sum(value, na.rm=TRUE) / 1e6)
+# anyDuplicated(dfa$cfda)
+# dfa[duplicated(dfa$cfda), ]
+
+dfb <- dfu %>% select(cfda=cfda_program_num, usasname=cfda_program_title, valuem) %>%
+  group_by(cfda, usasname) %>%
+  summarise(usas=sum(valuem, na.rm=TRUE) / 1e3) # put in billions
+
+dfc <- merge(dfa, dfb, by="cfda", all=TRUE)
+dfc <- dfc[, c("cfda", "usasname", "ffis", "usas")]
+dfc <- dfc %>%  
+  mutate(fmu=(naz(ffis)-naz(usas))*(naz(ffis)>=naz(usas)), 
+         umf=(naz(usas)-naz(ffis))*(naz(usas)>naz(ffis)),
+         maxdiff=pmax(fmu, umf, na.rm=TRUE)) %>%
+  arrange(-maxdiff)
+
+kable(select(dfc[1:75, ], -c(fmu, umf)), digits=2)
+
+kable(select(dfc[dfc$fmu>0 & dfc$maxdiff>2, ], -c(fmu, umf)), digits=2)
+dfc %>% filter(fmu>0 & maxdiff>2) %>% summarise(sum=sum(fmu, na.rm=TRUE))
+
+tbl <- dfc %>% filter(fmu>0 & maxdiff>1) %>%
+  arrange(-fmu) %>%
+  select(-c(maxdiff, umf)) %>%
+  mutate(usasname=substr(usasname, 1, 40))
+sum(tbl$fmu) / sum(dfc$fmu) * 100
+kable(tbl, digits=2)
+
+
+tbl <- dfc %>% filter(umf>0 & maxdiff>1) %>%
+  arrange(-umf) %>%
+  select(-c(maxdiff, fmu)) %>%
+  mutate(usasname=substr(usasname, 1, 40))
+sum(tbl$umf) / sum(dfc$umf) * 100
+kable(tbl, digits=2)
+
+
+sum(dfc$ffis, na.rm=TRUE)
+sum(dfc$usas, na.rm=TRUE)
+sum(dfc$ffis, na.rm=TRUE) - sum(dfc$usas, na.rm=TRUE)
+
+sum(dfc$fmu, na.rm=TRUE)
+sum(dfc$umf, na.rm=TRUE)
+sum(dfc$fmu, na.rm=TRUE) - sum(dfc$umf, na.rm=TRUE)
+
+```
+
+
+

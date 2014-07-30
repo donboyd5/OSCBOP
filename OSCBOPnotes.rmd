@@ -64,10 +64,12 @@ options(width=160) # set to 120 for html output, 80 for pdf output
 # dropdir <- "E:\\Dropbox\\PEW\\"
 
 bopd <- "E:\\Data\\Projects\\OSC BOP\\"
-
 fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
+grantsd <- paste0(datdir, "Federal budget and spending\\USASpending\\Grants\\")
+ffisd <- "E:\\Data\\Federal budget and spending\\FFIS\\"
 
 # abc
+
 
 # constants we'll almost always need    ####
 
@@ -79,6 +81,7 @@ fnloans <- "_All_Loans_Full_"
 fninsur <- "_All_Insurance_Full_"
 
 usasver <- "20140515" # version number of latest set of USASpending files
+
 
 # API keys
 beaapikey <- "21F782AD-56A6-439D-B3D5-9A592F020E26"
@@ -99,53 +102,47 @@ censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 
 ```
 
-# Possible approaches
-Goal: Allocate as much of the federal budget as is practical – revenue and spending – to each of the individual 50 states, using “reasonable” methodologies.
 
-Two possible approaches:
-
-1. Foot the numbers to the federal budget – the formal data on receipts and disbursements, and the official budget deficit. Where data allow (rare), use actual information on how each component of the budget is distributed to individual states. In other cases “allocate” spending to individual states based on reasonable proxies.  (NOTE: When I use the term “federal budget” I am referring to a data source and a way of categorizing data. The term “budget” here does NOT mean that the numbers are budgeted or projected.) 
-2. Use “disembodied” numbers from different data sources for major elements of the federal budget, and don’t worry too much if they do not add up to the federal budget precisely.
-
-The attraction of the former is it allows us to get at the balance of payments concept but it forces us to come up with proxies to allocate the budget. The advantage of the latter is that it requires fewer assumptions, but then we don’t foot to the full budget. I believe the first approach is best for our purposes as long as we think we have reasonable proxies – an issue we currently are exploring.
-
-## Authority, obligations or outlays?
-Per the 1999 Moynihan report (p.109), "The dollar amounts reported by the Census Bureau in the CFFR report can represent either actual expenditures or obligations. As a general guide, the grants and procurement data in the CFFR report represent obligated funds, while the salaries, wages and direct payments show actual expenditures.""
-
-## How the Moynihan report addressed this issue
-Moynihan/KSG appear to have used a variant of #2: As far as I can tell, they added up all spending in CFFR, and treated that as the totality of federal spending, and then allocated a like amount of taxes (to force a balanced budget). That worked for them, I believe, because the CFFR accounted for about “four fifths” of federal outlays, per the 1999 fisc report. Per the Moynihan report:
+```{r prepdata, eval=FALSE}
+# download any needed files
 
 
-* The calculations of Federal expenditures allocated to states are based on the reconciliation of two sources of data, the Consolidated Federal Funds Report, published by the Census Bureau, and the Budget of the United States Government, published by the Office of Management and Budget. While the Census Bureau does attempt to reconcile their data with the Federal budget, the two are not completely comparable. Over the past seven years, the Census measure of expenditures distributed domestically has accounted for about four fifths of total Federal outlays published by the Office of Management and Budget. Some areas of the budget, like foreign aid and some military spending, are spent overseas, so are not included in the Census data. No consistent methodology has been established to distribute other areas of spending such as net interest, deposit insurance or undistributed (by program) offsetting receipts. Finally, the amounts shown in the report for defense expenditures include all spending by the Department of Defense plus Department of Energy spending on defense-related activities and military retirement, disability payments, and other veterans’ benefits. (1999 Fisc Report, p.111)
+# ```{r fig.width=1, fig.height=10}
+# library(png)
+# library(grid)
+# img <- readPNG(path/to/your/image)
+#  grid.raster(img)
+# ```
 
-## What Pew and NPP are doing
-The National Priorities Project, and Pew, in their respective projects, are using the second approach. That is, they are not trying to add up to the full federal budget. This makes sense for their purposes because they are not comparing federal revenue to federal spending, and are not professing to allocate the entire federal budget to the 50 states.
-
-
-# Federal budget overview
-FFY 2013 ended Sept 30, 2013 and we have reasonably complete data, so this is the year to use.
-
-The “Historical Tables” (http://www.whitehouse.gov/omb/budget/Historicals) are a key source of information on the federal budget. Here is a snapshot of recent years from HT Table 1.1. The federal budget deficit peaked at $1.3 trillion in FFY 2011 and fell to $680 billion in 2013. These are the official federal deficit numbers.
-
-<img src="E:\\R\\RPrograms\\OSCBOP\\Images\\fedbud.png" />
-
-Total spending in 2013 on this basis was $3.455 trillion.
-
-When we look at USASpending we appear to come up about $450-500 billion short. The table below shows $2.5 trillion of spending, plus another $467 billion we know about from personnel data. The two together are about 87% of federal outlays.
-
-<img src="E:\\R\\RPrograms\\OSCBOP\\Images\\usaspendingfy2013totals.jpg" />
+```
 
 
 
-```{r appendices, child=paste0("subGrants.Rmd"), eval=TRUE}
+```{r intro, child=paste0("subIntro.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
-```{r appendices, child=paste0("subAppendices.Rmd"), eval=FALSE}
+
+```{r fedbud, child=paste0("subFedBud.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
-```{r appendices, child=paste0("subAppendices.Rmd"), eval=FALSE}
+
+```{r grants, child=paste0("subGrants.Rmd"), eval=TRUE}
+# don't put anything else here - it WILL NOT BE RUN!
+```
+
+```{r directpay, child=paste0("subDirectPay.Rmd"), eval=FALSE}
+# don't put anything else here - it WILL NOT BE RUN!
+```
+
+
+```{r contracts, child=paste0("subContracts.Rmd"), eval=FALSE}
+# don't put anything else here - it WILL NOT BE RUN!
+```
+
+
+```{r personnel, child=paste0("subPersonnel.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
