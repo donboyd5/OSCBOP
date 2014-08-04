@@ -6,6 +6,20 @@ author: "Don Boyd"
 
 # Grants analysis
 
+## Conclusions so far
+
+We have two main sources of grants data that are easily allocable to states, USASpending and FFIS, and they differ significantly in their totals and in the amounts for specific grants. (We also may have some agency sources and other sources for specific large grants.) Fortunately, (a) we can isolate those differences and I have begun to do that, and (b) preliminary indications are that the largest differences are isolated in a relatively small number of large grants.
+
+I think the main tasks ahead are to:
+
+1. Examine the largest differences. I can provide lists that facilitate this.
+2. Make a judgment about which source is best for these specific large grants, and use that source to allocate these large grants.
+3. Make a judgment about which source is likely to be best for the remaining grants for which we have data from both sources, and use that source (FFIS or USASpending) for remaining sources in common.
+4. Use USASpending for the sources for which we only have USASpending.
+
+We can computerize the allocation of grants to states so that the work is not labor intensive. However, step #2 above is likely to be labor intensive.
+
+
 ```{r, eval=FALSE}
 # get ALL grants data and save subset so that we can save time; eventually try to do with caching
 system.time(dfall <- readRDS(paste0(grantsd, "grants2013.rds"))) # this seems to be slow so avoid doing each time
@@ -159,11 +173,102 @@ cat("\nFFIS grants in billions, by federal fiscal year")
 # kable(df2, digits=2)
 dfl %>% filter(state!="National Total") %>% group_by(fyear) %>% summarise(value=sum(value, na.rm=TRUE) / 1e6)
 
+cat("\nFFIS grants for 2013 in billions, by states vs. other geographies")
+nonstateDC <- c("Unallocated", "Puerto Rico", "Guam", "Virgin Islands", "American Samoa", "Northern Mariana Islands", "Territories")
+# kable(df2, digits=2)
+dfl %>% filter(state!="National Total" & fyear==2013) %>% 
+  group_by(state %in% nonstateDC) %>% 
+  summarise(value=sum(value, na.rm=TRUE) / 1e6) %>%
+  arrange(-value)
+
+cat("\nFFIS grants for 2013 in billions, by geography")
+# kable(df2, digits=2)
+dfl %>% filter(state!="National Total" & fyear==2013) %>% 
+  group_by(state) %>% 
+  summarise(value=sum(value, na.rm=TRUE) / 1e6) %>%
+  arrange(-value)
+
+cat("\nFFIS grants for 2013 in billions, states & DC only, by concept used to measure spending")
+cat("OB=Obligations, BA=Budget Authority, AP=Apportionment")
+dfl %>% filter(state!="National Total" & fyear==2013 & !state %in% nonstateDC) %>% 
+  group_by(xtype2013) %>% 
+  summarise(value=sum(value, na.rm=TRUE) / 1e6) %>%
+  arrange(-value)
+
+cat("\nFFIS grants for 2013 in billions, states & DC only, by major grant category, where amount > $2b")
+# kable(df2, digits=2)
+dfl %>% filter(state!="National Total" & fyear==2013 & !state %in% nonstateDC) %>% 
+  group_by(cfda, program) %>% 
+  summarise(value=sum(value, na.rm=TRUE) / 1e6) %>%
+  arrange(-value) %>%
+  filter(value >= 2)
+
+
 ```
 
 
-## Comparison of USASpending grants and FFIS grants: 75 largest differences
+## Comparison of USASpending grants and FFIS grants
+### State shares of total
+```{r, echo=FALSE}
+dff <- readRDS(paste0(ffisd, "ffisgrants.rds"))
+cat("\nFFIS grants for 2013 in billions, states & DC only, with US totals, and with state shares")
+# kable(df2, digits=2)
+tmpf <- dff %>% filter(fyear==2013 & !state %in% c(nonstateDC, "National Total") & !is.na(state)) %>% 
+  group_by(state) %>% 
+  summarise(value=sum(value, na.rm=TRUE) / 1e6)
+tmpf <- rbind(tmpf, tmpf %>% summarise(value=sum(value, na.rm=TRUE)) %>% mutate(state=" US Total"))
+tmpf <- tmpf %>% mutate(pctshare=value / tmpf$value[tmpf$state==" US Total"] * 100)  %>%
+  arrange(-value)
+tmpf <- tmpf %>% select(stname=state, value, pctshare) # rename state
+kable(tmpf, digits=2)
 
+dfu <- readRDS(paste0(grantsd, "grants2013trim.rds"))
+# anyDuplicated(dfu$cfda)
+# ht(dfu)
+cat("\nUSASpending grants for 2013 in billions, states & DC only, with US totals, and with state shares")
+# kable(df2, digits=2)
+tmpu <- dfu %>% filter(!stname %in% c(nonstateDC) & !is.na(stname)) %>% 
+  group_by(stname) %>% 
+  summarise(value=sum(valuem, na.rm=TRUE) / 1e3)
+tmpu <- rbind(tmpu, tmpu %>% summarise(value=sum(value, na.rm=TRUE)) %>% mutate(stname=" US Total"))
+tmpu <- tmpu %>% mutate(pctshare=value / tmpu$value[tmpu$stname==" US Total"] * 100)  %>%
+  arrange(-value)
+kable(tmpu, digits=2)
+
+cat("\nScatterplot of state shares of allocated grants, 2013, FFIS vs. USASpending")
+tmp <- rbind(mutate(tmpf, source="ffis"), mutate(tmpu, source="usas"))
+# count(tmp, "stname")
+tmp$stabbr <- as.character(factor(tmp$stname, levels=stcodes$stname, labels=stcodes$stabbr))
+tmp$stabbr <- ifelse(tmp$stname==" US Total", "US", tmp$stabbr)
+tmpw <- tmp %>% select(-value) %>% spread(source, pctshare) %>% filter(stabbr!="US")
+
+xlab <-"FFIS"
+ylab <- "USASpending"
+main <- "State share of grants in 2013, FFIS vs USASpending"
+p <- ggplot(tmpw, aes(x=ffis, y=usas, label=stabbr)) + 
+  geom_text(size=3, colour="blue") + 
+  scale_x_continuous(xlab) + scale_y_continuous(ylab) +
+  labs(title=main) +
+  geom_abline(intercept=0, slope=1)
+p
+
+cat("\nScatterplot of state shares of allocated grants, 2013, FFIS vs. USASpending
+    Excluding CA, NY, and TX")
+main <- "State share of grants in 2013, FFIS vs USASpending\nExcluding CA, NY, and TX"
+p <- ggplot(filter(tmpw, !stabbr %in% c("CA", "NY", "TX")), aes(x=ffis, y=usas, label=stabbr)) + 
+  geom_text(size=3, colour="blue") + 
+  scale_x_continuous(xlab) + scale_y_continuous(ylab) +
+  labs(title=main) +
+  geom_abline(intercept=0, slope=1)
+p
+
+
+
+```
+
+
+
+### 50 largest differences, considering all grants
 ```{r, results='asis'}
 dff <- readRDS(paste0(ffisd, "ffisgrants.rds"))
 # ht(dff)
@@ -191,36 +296,108 @@ dfc <- dfc %>%
          maxdiff=pmax(fmu, umf, na.rm=TRUE)) %>%
   arrange(-maxdiff)
 
-kable(select(dfc[1:75, ], -c(fmu, umf)), digits=2)
+kable(select(dfc[1:50, ], -c(fmu, umf)), digits=2)
 
-kable(select(dfc[dfc$fmu>0 & dfc$maxdiff>2, ], -c(fmu, umf)), digits=2)
-dfc %>% filter(fmu>0 & maxdiff>2) %>% summarise(sum=sum(fmu, na.rm=TRUE))
-
-tbl <- dfc %>% filter(fmu>0 & maxdiff>1) %>%
-  arrange(-fmu) %>%
-  select(-c(maxdiff, umf)) %>%
-  mutate(usasname=substr(usasname, 1, 40))
-sum(tbl$fmu) / sum(dfc$fmu) * 100
-kable(tbl, digits=2)
-
-
-tbl <- dfc %>% filter(umf>0 & maxdiff>1) %>%
-  arrange(-umf) %>%
-  select(-c(maxdiff, fmu)) %>%
-  mutate(usasname=substr(usasname, 1, 40))
-sum(tbl$umf) / sum(dfc$umf) * 100
-kable(tbl, digits=2)
-
-
-sum(dfc$ffis, na.rm=TRUE)
-sum(dfc$usas, na.rm=TRUE)
-sum(dfc$ffis, na.rm=TRUE) - sum(dfc$usas, na.rm=TRUE)
-
-sum(dfc$fmu, na.rm=TRUE)
-sum(dfc$umf, na.rm=TRUE)
-sum(dfc$fmu, na.rm=TRUE) - sum(dfc$umf, na.rm=TRUE)
+# kable(select(dfc[dfc$fmu>0 & dfc$maxdiff>2, ], -c(fmu, umf)), digits=2)
+# dfc %>% filter(fmu>0 & maxdiff>2) %>% summarise(sum=sum(fmu, na.rm=TRUE))
+# 
+# tbl <- dfc %>% filter(fmu>0 & maxdiff>1) %>%
+#   arrange(-fmu) %>%
+#   select(-c(maxdiff, umf)) %>%
+#   mutate(usasname=substr(usasname, 1, 40))
+# sum(tbl$fmu) / sum(dfc$fmu) * 100
+# kable(tbl, digits=2)
+# 
+# 
+# tbl <- dfc %>% filter(umf>0 & maxdiff>1) %>%
+#   arrange(-umf) %>%
+#   select(-c(maxdiff, fmu)) %>%
+#   mutate(usasname=substr(usasname, 1, 40))
+# sum(tbl$umf) / sum(dfc$umf) * 100
+# kable(tbl, digits=2)
+# 
+# 
+# sum(dfc$ffis, na.rm=TRUE)
+# sum(dfc$usas, na.rm=TRUE)
+# sum(dfc$ffis, na.rm=TRUE) - sum(dfc$usas, na.rm=TRUE)
+# 
+# sum(dfc$fmu, na.rm=TRUE)
+# sum(dfc$umf, na.rm=TRUE)
+# sum(dfc$fmu, na.rm=TRUE) - sum(dfc$umf, na.rm=TRUE)
 
 ```
 
 
+### 50 largest differences, considering only grants that could be allocated to states
+```{r, results='asis'}
+dff <- readRDS(paste0(ffisd, "ffisgrants.rds"))
+nonstateDC <- c("Unallocated", "Puerto Rico", "Guam", "Virgin Islands", "American Samoa", "Northern Mariana Islands", "Territories")
+dff <- dff %>% filter(!state %in% c(nonstateDC, "National Total") & !is.na(state))
+# count(dff, "state")
+# ht(dff)
+dfu <- readRDS(paste0(grantsd, "grants2013trim.rds"))
+# count(dfu, c("recipient_state_code", "stname"))
+# count(dfu, c("stname"))
+dfu <- dfu %>% filter(!stname %in% c(nonstateDC) & !is.na(stname))
+# anyDuplicated(dfu$cfda)
+# ht(dfu)
+
+# FFIS has duplicate cfdas, so I collapse by cfda and compare using the usas name
+dfa <- dff %>% filter(fyear==2013 & state!="National Total") %>%
+  select(cfda, ffisname=program, xdefine=xtype2013, value) %>%
+  group_by(cfda) %>%
+  summarise(ffis=sum(value, na.rm=TRUE) / 1e6) # put in $ billions
+# anyDuplicated(dfa$cfda)
+# dfa[duplicated(dfa$cfda), ]
+
+dfb <- dfu %>% select(cfda=cfda_program_num, usasname=cfda_program_title, valuem) %>%
+  group_by(cfda, usasname) %>%
+  summarise(usas=sum(valuem, na.rm=TRUE) / 1e3) # put in billions
+
+dfc <- merge(dfa, dfb, by="cfda", all=TRUE)
+dfc <- dfc[, c("cfda", "usasname", "ffis", "usas")]
+dfc <- dfc %>%  
+  mutate(fmu=(naz(ffis)-naz(usas))*(naz(ffis)>=naz(usas)), 
+         umf=(naz(usas)-naz(ffis))*(naz(usas)>naz(ffis)),
+         maxdiff=pmax(fmu, umf, na.rm=TRUE)) %>%
+  arrange(-maxdiff)
+
+kable(select(dfc[1:50, ], -c(fmu, umf)), digits=2)
+```
+
+
+### Grants where FFIS is at least $1 billion > USASpending, considering only grants that could be allocated to states
+```{r}
+tbl <- dfc %>% filter(fmu>0 & maxdiff>1) %>%
+  arrange(-fmu) %>%
+  select(-c(maxdiff, umf)) %>%
+  mutate(usasname=substr(usasname, 1, 60))
+
+sum(tbl$fmu) / sum(dfc$fmu) * 100
+kable(tbl, digits=2)
+
+```
+
+
+### Grants where USASpending is at least $1 billion > FFIS, considering only grants that could be allocated to states
+```{r}
+tbl <- dfc %>% filter(umf>0 & maxdiff>1) %>%
+  arrange(-umf) %>%
+  select(-c(maxdiff, fmu)) %>%
+  mutate(usasname=substr(usasname, 1, 60))
+sum(tbl$umf) / sum(dfc$umf) * 100
+kable(tbl, digits=2)
+
+```
+
+
+# Selected exploration: CHIP (an area of big difference)
+
+Kaiser says CHIP was $7.5b in 2009
+
+<img src="E:\\R\\RPrograms\\OSCBOP\\Images\\KFF CHIP.jpg" />
+
+CFDA says CHIP obligations were $8.9b in 2013
+
+<img src="E:\\R\\RPrograms\\OSCBOP\\Images\\cfda chip.jpg" />
 

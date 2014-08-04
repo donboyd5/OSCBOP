@@ -118,12 +118,12 @@ censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 
 
 
-```{r intro, child=paste0("subIntro.Rmd"), eval=FALSE}
+```{r intro, child=paste0("subIntro.Rmd"), eval=TRUE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
 
-```{r fedbud, child=paste0("subFedBud.Rmd"), eval=FALSE}
+```{r fedbud, child=paste0("subFedBud.Rmd"), eval=TRUE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
