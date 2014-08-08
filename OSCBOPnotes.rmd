@@ -65,7 +65,11 @@ options(width=160) # set to 120 for html output, 80 for pdf output
 
 bopd <- "E:\\Data\\Projects\\OSC BOP\\"
 fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
-grantsd <- paste0(datdir, "Federal budget and spending\\USASpending\\Grants\\")
+
+usasd <- "E:\\Data\\Federal budget and spending\\USASpending\\"
+grantsd <- paste0(usasd, "Grants\\")
+dpayd <- paste0(usasd, "DirectPayments\\")
+
 ffisd <- "E:\\Data\\Federal budget and spending\\FFIS\\"
 
 # abc
@@ -118,21 +122,21 @@ censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 
 
 
-```{r intro, child=paste0("subIntro.Rmd"), eval=TRUE}
+```{r intro, child=paste0("subIntro.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
 
-```{r fedbud, child=paste0("subFedBud.Rmd"), eval=TRUE}
+```{r fedbud, child=paste0("subFedBud.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
 
-```{r grants, child=paste0("subGrants.Rmd"), eval=TRUE}
+```{r grants, child=paste0("subGrants.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
-```{r directpay, child=paste0("subDirectPay.Rmd"), eval=FALSE}
+```{r directpay, child=paste0("subDirectPay.Rmd"), eval=TRUE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 

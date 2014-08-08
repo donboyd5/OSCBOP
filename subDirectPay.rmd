@@ -3,18 +3,435 @@ title: "subDirectPay"
 author: "Don Boyd"
 ---
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Direct payments analysis
+## Summary so far
+### Conclusions
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+* USASpending may be a good source for US totals for direct payments spending - i.e., for knowing
+    * Which programs are properly considered direct payments
+    * US totals for these programs
+* It is obvious that the USASpending state allocations don't reflect what we think makes sense
+    * For example, Pennsylvania has the greatest allocation (more than CA, FL, TX, NY, etc.). I suspect it is not an error in the data, per se, but it undoubtedly means the data do not mean what we want them to mean (e.g, perhaps a lot of checks for Social Security are processed in PA and perhaps that is how SSA decides where to "source" those payments).
+    * And Maryland has negative direct payment totals, driven by negatives for the 3 Medicare programs
+* Programs that look particularly suspect include:
+    * 93.773 Medicare_Hospital Insurance
+    * 93.774 Medicare_Supplementary Medical Insurance
+    * 93.770 Medicare_Prescription Drug Coverage
+    * 84.063 Federal Pell Grant Program certainly does not follow population distribution, but perhaps it is possible. Requires some investigation.
+    * 57.001 Social Insurance for Railroad Workers ditto
+* Two strategies to pursue:
+    * 1. See if we can
+        * "trust" the non-Medicare USASpending data
+            * Is anything significant missing from USASpending?
+            * Can we get info on how major programs are allocated
+        * get good external data sources to allocate Medicare (links below)
+    * 2. Alternatively, throw out ALL USASpending direct payments data (not just Medicaire) and pursue a BEA-based approach (discuss with Sam Amy-Rosen at Pew, Becky Sweger at NPP)
+
+### Questions and TODO
+* What is difference between principal_place_state_code and recipient_state_code? (Doesn't look like it makes a lot of difference.)
+* Can we find out what rules federal agencies are using for determining recipient_state_code for specific CFDA programs?
+* Since Medicare is, by far, the largest of the most-suspect programs, can we find an alternative way to allocate it?
+* Can we investigate Pell Grants and also 57.001?
+
+```{r dpdata, eval=FALSE}
+# note re bullets above - use 2 indents for each new bullet levl
+# get ALL direct payments data and save subset so that we can save time; eventually try to do with caching
+system.time(df <- readRDS(paste0(dpayd, "directpay2013.rds"))) # this seems to be slow so avoid doing each time
+ht(df)
+names(df)
+grep("state", names(df), value=TRUE)
+grep("recip", names(df), value=TRUE)
+
+vnum <- 65; df[1:5, vnum:(vnum+4)]
+vars <- c("cfda_program_num", "cfda_program_title", " account_title", "agency_code", "agency_name", "record_type", "project_description", "recip_cat_type", "recipient_type", "assistance_type", "principal_place_code", "principal_place_state", "principal_place_state_code", "recipient_state_code", "fed_funding_amount")
+
+subdf <- df %>% select(eval(uvf(vars)))
+ht(subdf)
+saveRDS(subdf, paste0(dpayd, "directpay2013sub.rds"))
+system.time(subdf <- readRDS(paste0(dpayd, "directpay2013sub.rds"))) # much faster - only 0.6 secs
+
+```
 
 ```{r}
-summary(cars)
+# get data with subset of variables (fast)
+df <- readRDS(paste0(dpayd, "directpay2013sub.rds"))
+
 ```
 
-You can also embed plots, for example:
 
-```{r, echo=FALSE}
-plot(cars)
+## USASpending totals: detailed data compared to online data
+
+Totals from detailed data and from online USASpending (screenshot 8/8/2014)
+
+Total direct payments in $ millions from detailed data (file dated 7/15/2014) `r sum(df$fed_funding_amount, na.rm=TRUE)/1e9`
+
+<img src="E:\\Dropbox\\R\\RPrograms\\OSCBOP\\Images\\usaspendingfy2013bytype.jpg" />
+
+## Quick look at top direct payments by various groupings
+
+```{r, eval=TRUE, results='asis'}
+# quick looks at vars by group
+
+cat("\nTop direct payments by agency") # using \n in cat helps avoid table problems when results="asis"
+tmp <- df %>% group_by(agency_name) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop direct payments by cfda")
+tmp <- df %>% group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop direct payments by recip_cat_type")
+tmp <- df %>% group_by(recip_cat_type) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop direct payments by recipient type")
+tmp <- df %>% group_by(recipient_type) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop county government direct payments by cfda")
+tmp <- df %>% filter(recipient_type=="01: County government") %>%
+  group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop state government direct payments by cfda")
+tmp <- df %>% filter(recipient_type=="00: State government") %>%
+  group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop state higher ed direct payments by cfda")
+tmp <- df %>% filter(recipient_type=="06: State controlled institution of higher education") %>%
+  group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop direct payments by project description")
+tmp <- df %>% group_by(project_description) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop direct payments by principal_place_state_code")
+tmp <- df %>% group_by(principal_place_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop direct payments by recipient_state_code")
+tmp <- df %>% group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp, digits=2)
+
+cat("\nTop NY recip direct payments by cfda")
+tmp <- df %>% filter(recipient_state_code=="NY") %>%
+  group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## USASpending recipient-state allocations for individual large direct payment programs
+```{r usasprogstate, eval=TRUE}
+cat("\nTop 96.002 Social Security_Retirement Insurance direct payments by recipient_state_code")
+tmp <- df %>% filter(cfda_program_num=="96.002") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 93.773 Medicare_Hospital Insurance direct payments by recipient_state_code")
+cat("This is obviously not allocated by where the beneficiaries are!")
+tmp <- df %>% filter(cfda_program_num=="93.773") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 93.774 Medicare_Supplementary Medical Insurance direct payments by recipient_state_code")
+cat("\nThis is obviously not allocated by where the beneficiaries are!")
+tmp <- df %>% filter(cfda_program_num=="93.774") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 96.001 Social Security_Disability Insurance direct payments by recipient_state_code")
+tmp <- df %>% filter(cfda_program_num=="96.001") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 96.004 Social Security_Survivors Insurance direct payments by recipient_state_code")
+tmp <- df %>% filter(cfda_program_num=="96.004") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 93.770 Medicare_Prescription Drug Coverage direct payments by recipient_state_code")
+cat("\nThis looks odd. Doubt it can be where the beneificiaries are. Needs investigation.")
+tmp <- df %>% filter(cfda_program_num=="93.770") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 64.109 Veterans Compensation for Service-Connected Disability direct payments by recipient_state_code")
+tmp <- df %>% filter(cfda_program_num=="64.109") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 96.006 Supplemental Security Income direct payments by recipient_state_code")
+tmp <- df %>% filter(cfda_program_num=="96.006") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 84.063 Federal Pell Grant Program direct payments by recipient_state_code")
+cat("\nMaybe this sort of allocation is plausible?")
+tmp <- df %>% filter(cfda_program_num=="84.063") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 57.001 Social Insurance for Railroad Workers direct payments by recipient_state_code")
+cat("\nMaybe this sort of allocation is plausible?")
+tmp <- df %>% filter(cfda_program_num=="57.001") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 14.195 Section 8 Housing Assistance Payments Program direct payments by recipient_state_code")
+cat("\nLooks plausible to me")
+tmp <- df %>% filter(cfda_program_num=="14.195") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 64.028 Post-9/11 Veterans Educational Assistance direct payments by recipient_state_code")
+cat("\nProbably should be investigated if we dip down this far in program size")
+tmp <- df %>% filter(cfda_program_num=="64.028") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 10.551 Supplemental Nutrition Assistance Program direct payments by recipient_state_code")
+tmp <- df %>% filter(cfda_program_num=="10.551") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 64.110 Veterans Dependency and Indemnity Compensation for Service-Connected Death direct payments by recipient_state_code")
+tmp <- df %>% filter(cfda_program_num=="64.110") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+cat("\nTop 10.055 Direct and Counter-cyclical Payments Program direct payments by recipient_state_code")
+cat("Is it plausible for Iowa to have 9.6% of the US total? Possible. Per cfda, 'DCP provides payments to eligible producers on farms enrolled for the 2008 through 2013 crop years.'")
+tmp <- df %>% filter(cfda_program_num=="10.055") %>%
+  group_by(recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
+
+```
+
+
+## Summary of program allocation by recipient state for major programs and all other
+```{r progalloc}
+# get the top n programs and create a factor
+nprogs <- 15
+tmp <- df %>% group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  head(nprogs)
+
+df2 <- df
+df2$topprogs <- factor(df$cfda_program_num, levels=tmp$cfda_program_num, labels=tmp$cfda_program_title, ordered=TRUE)
+# head(df2)
+
+
+```
+
+### For each program, each state as % of US program total
+```{r progallocpct, results='asis'}
+library(xtable) # xtable needed because of table width
+
+# summarize by program group and state
+tmp <- df2 %>% group_by(topprogs, recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  mutate(pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100) %>%
+  select(-fed_funding_amount) %>%
+  mutate(pct=round(pct, 2)) %>%
+  spread(topprogs, pct)
+
+ttmp <- xtable(tmp)
+print(ttmp, type="html")
+```
+
+### Amounts by program and state, in $ billions
+```{r progallocamount, results='asis'}
+library(xtable) # xtable needed because of table width
+
+# summarize by program group and state
+tmp <- df2 %>% group_by(topprogs, recipient_state_code) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  spread(topprogs, fed_funding_amount)
+
+ttmp <- xtable(tmp)
+
+sumf <- function(x) sum(x, na.rm=TRUE)
+ttmp <- cbind(data.frame(recipient_state_code=c(as.character(tmp$recipient_state_code), "Sum")),
+              as.data.frame(addmargins(as.matrix(tmp[, -1]), FUN=sumf)))
+ttmp <- xtable(ttmp, digits=1)
+
+# temp.table <- xtable(temp.ts, digits = 0) 
+# temp.table <- xtable(addmargins(as.matrix(as.data.frame(temp.table)), 2), digits = 0) 
+print(ttmp, type="html")
+```
+
+
+## A closer look at Medicare
+
+### Total Medicare spending
+Here are Medicare outlays in the federal budget 
+<img src="E:\\Dropbox\\R\\RPrograms\\OSCBOP\\Images\\MedicareTab25-12.jpg" />
+
+And here's the summary of obligations in USASpending
+```{r}
+tmp <- df %>% filter(cfda_program_num %in% c("93.773", "93.774", "93.770")) %>%
+  group_by(cfda_program_num, cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) 
+kable(tmp, digits=2)
+cat(paste0("Grand Medicare sum from USASpending:  ", sum(tmp$fed_funding_amount)))
+```
+
+### Possible sources of information to use to allocate Medicare spending by state
+
+Kaiser uses CMS State Health Expenditures (http://kff.org/medicare/state-indicator/medicare-spending-by-residence/)
+<img src="E:\\Dropbox\\R\\RPrograms\\OSCBOP\\Images\\cmsshe.png" />
+But that is only available through 2009 so it would be a little dated
+
+
+Here are some links to other potential sources but I haven't had much chance to explore them:
+
+http://www.kaiserhealthnews.org/stories/2013/november/30/post-acute-care-table-by-state.aspx
+
+http://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/Medicare-Geographic-Variation/GV_PUF.html
+
+http://www.cms.gov/Medicare/Health-Plans/MedicareAdvtgSpecRateStats/FFS-Data.html
+
+The above appears to have Medicare FFS data. Also need MA Medicare advantage.
+
+ftp://ftp.cdc.gov/pub/Health_Statistics/NCHS/Publications/Health_US/hus13tables/table133.xls
+
+http://www.dartmouthatlas.org/
+
+http://www.cms.gov/Research-Statistics-Data-and-Systems/Statistics-Trends-and-Reports/MCRAdvPartDEnrolData/index.html?redirect=/MCRAdvPartDEnrolData/MCESR/List.asp
+
+
