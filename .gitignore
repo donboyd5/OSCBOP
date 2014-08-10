@@ -1,7 +1,7 @@
 .Rproj.user
 .Rhistory
 .RData
-OSCBOPnotes.html
 Images
 Figs
-subPersonnel.html
+*.html
+*.md
