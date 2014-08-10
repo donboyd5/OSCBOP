@@ -19,9 +19,11 @@ http://git-scm.com/docs/gitignore
 add the filename to the gitignore file for the project
 
 To stop tracking a file that is currently tracked, use 'git rm --cached'.
-For example - open the git gui (right-click from Windows Explorer in the project directory) and do
-  git rm --cached OSCBOPnotes.html
+For example - open the git gui or bash (right-click from Windows Explorer in the project directory) and do
+    git rm --cached OSCBOPnotes.html
   where what follows "cached" is the name of the file to stop tracking
+  also can do ff (quotes essential):
+    git rm --cached "*.html"
 
 rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", output_dir="E:\\Temp", intermediates_dir="E:\\Temp")
 
