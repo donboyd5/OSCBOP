@@ -68,14 +68,24 @@ options(width=160) # set to 120 for html output, 80 for pdf output
 # define directories
 # dropdir <- "E:\\Dropbox\\PEW\\"
 
-bopd <- "E:\\Data\\Projects\\OSC BOP\\"
-fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
+cptr <- "PC"
+cptr <- "LAPTOP"
 
-usasd <- "E:\\Data\\Federal budget and spending\\USASpending\\"
-grantsd <- paste0(usasd, "Grants\\")
-dpayd <- paste0(usasd, "DirectPayments\\")
+if(cptr=="PC"){
+  bopd <- "E:\\Data\\Projects\\OSC BOP\\"
+  fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
 
-ffisd <- "E:\\Data\\Federal budget and spending\\FFIS\\"
+  usasd <- "E:\\Data\\Federal budget and spending\\USASpending\\"
+  grantsd <- paste0(usasd, "Grants\\")
+  dpayd <- paste0(usasd, "DirectPayments\\")
+  contrd <- ""
+
+  ffisd <- "E:\\Data\\Federal budget and spending\\FFIS\\"
+} else {
+  sdatd <- "C:\\Users\\Don\\Dropbox (Personal)\\sharedData\\"
+  usasd <- paste0(sdatd, "Data for projects\\Federal budget and spending\\USASpending\\")    
+}
+
 
 # abc
 
