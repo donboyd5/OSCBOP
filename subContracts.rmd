@@ -4,15 +4,156 @@ author: "Don Boyd"
 ---
 
 
-# Contracts and procurement
+# Contracts and procurement analysis
 
-```{r}
+```{r cdataprep, eval=FALSE}
+fn <- "2013_All_Contracts_Full_20140715.csv"
+system.time(df <- read.csv(paste0(usasd, fn), colClasses="character")) # 10 mins
+ht(df)
+dim(df)
+system.time(saveRDS(df, paste0(rfiles, "contractsraw_2013.rds"))) # 5 mins
+system.time(df <- readRDS(paste0(rfiles, "contractsraw_2013.rds"))) # 3 mins
+# now create a slimmed down version that will be faster and easier to work with
+names(df)
+head(df)
+grep("place", names(df), value=TRUE)
+grep("perf", names(df), value=TRUE)
+grep("pop", names(df), value=TRUE)
+kvars <- c("obligatedamount", "maj_agency_cat", "contractactiontype", "contractfinancing", "majorprogramcode", "agencyid", "fiscal_year",
+           "organizationaltype", "pop_state_code", "placeofperformancecongressionaldistrict", "statecode")
+df2 <- select(df, eval(uvf(kvars)))
+system.time(saveRDS(df2, paste0(rfiles, "contractstrim_2013.rds"))) # 13 secs
 
+df %>% summarise(sum=sum(cton(obligatedamount), na.rm=TRUE) / 1e9)
+df %>% group_by(fiscal_year) %>% summarise(sum=sum(cton(obligatedamount), na.rm=TRUE) / 1e9)
 
-
-
+count(df, "placeofperformancecongressionaldistrict")
+count(df, "locationcode")
+count(df, "statecode")
 
 ```
 
+
+```{r cgetdata, echo=FALSE, results='hide'}
+system.time(df2 <- readRDS(paste0(rfiles, "contractstrim_2013.rds")))  # 8 secs
+df2 <- mutate(df2, obligatedamount=cton(obligatedamount))
+# df2 %>% summarise(sum=sum(cton(obligatedamount), na.rm=TRUE) / 1e9)
+# count(df2, "pop_state_code")
+
+```
+
+## Summary and conclusions so far
+
+* Total FFY 2013 contract spending per USASpending (7/15/2014) was `r sum(df2$obligatedamount, na.rm=TRUE)/1e9`  billion
+* Amount allocated to states & DC (as opposed to territory or missing): $406.9b
+
+
+## Details
+
+### Contracts by department, FFY 2013, $ billions
+```{r}
+tmp <- df2 %>% mutate(stabbr=substr(statecode, 1, 2)) %>%
+  group_by(maj_agency_cat) %>% 
+  summarise(sum=sum(obligatedamount, na.rm=TRUE) / 1e9) %>%
+  ungroup() %>%
+  arrange(-sum) %>%
+  mutate(cumsum=cumsum(sum), pct=sum / sum(sum, na.rm=TRUE) * 100, cumpct=cumsum(pct))
+kable(tmp, digits=2)
+```
+
+
+### Contracts by state and similar areas, FFY 2013, $ billions
+```{r}
+tmp <- df2 %>% mutate(stabbr=substr(statecode, 1, 2)) %>%
+  group_by(stabbr) %>% 
+  summarise(sum=sum(obligatedamount, na.rm=TRUE) / 1e9) %>%
+  ungroup() %>%
+  arrange(-sum) %>%
+  mutate(cumsum=cumsum(sum), pct=sum / sum(sum, na.rm=TRUE) * 100, cumpct=cumsum(pct))
+kable(tmp, digits=2)
+
+```
+
+
+### Contracts by state (non-state areas and missings excluded), FFY 2013, $ billions
+```{r}
+tmp <- df2 %>% mutate(stabbr=substr(statecode, 1, 2)) %>%
+  filter(stabbr %in% c(state.abb, "DC")) %>%
+  group_by(stabbr) %>% 
+  summarise(sum=sum(obligatedamount, na.rm=TRUE) / 1e9) %>%
+  ungroup() %>%
+  arrange(-sum) %>%
+  mutate(cumsum=cumsum(sum), pct=sum / sum(sum, na.rm=TRUE) * 100, cumpct=cumsum(pct))
+kable(tmp, digits=2)
+
+```
+
+
+### Contracts by state (non-state areas and missings excluded) and major department, FFY 2013, $ billions
+```{r, results='asis'}
+ndepts <- 10
+tmp <- df2 %>% group_by(maj_agency_cat) %>%
+  summarise(sum=sum(obligatedamount, na.rm=TRUE) / 1e9) %>%
+  arrange(-sum) %>%
+  head(ndepts)
+
+df3 <- df2
+df3$topdepts <- factor(df3$maj_agency_cat, levels=tmp$maj_agency_cat, ordered=TRUE)
+
+
+tmp2 <- df3 %>% mutate(stabbr=substr(statecode, 1, 2)) %>%
+  filter(stabbr %in% c(state.abb, "DC")) %>%
+  group_by(topdepts, stabbr) %>%
+  summarise(sum=sum(obligatedamount, na.rm=true)/1e9) %>%
+  spread(topdepts, sum)
+
+library(xtable)
+sumf <- function(x) sum(x, na.rm=TRUE)
+ttmp <- cbind(data.frame(stabbr=c(as.character(tmp2$stabbr), "Sum")),
+              as.data.frame(addmargins(as.matrix(tmp2[, -1]), FUN=sumf))) %>% 
+  arrange(-sumf)
+idvars <- c("stabbr", "sumf")
+ttmp <- ttmp[, c(idvars, setdiff(names(ttmp), idvars))]
+
+ttmp <- xtable(ttmp, digits=1)
+
+print(ttmp, type="html")
+
+```
+
+
+### Contracts by state (non-state areas and missings excluded) and major department, FFY 2013, as % of department total
+```{r, results='asis'}
+ndepts <- 10
+tmp <- df2 %>% group_by(maj_agency_cat) %>%
+  summarise(sum=sum(obligatedamount, na.rm=TRUE) / 1e9) %>%
+  arrange(-sum) %>%
+  head(ndepts)
+
+df3 <- df2
+df3$topdepts <- factor(df3$maj_agency_cat, levels=tmp$maj_agency_cat, ordered=TRUE)
+
+tmp2 <- df3 %>% mutate(stabbr=substr(statecode, 1, 2)) %>%
+  filter(stabbr %in% c(state.abb, "DC")) %>%
+  group_by(topdepts, stabbr) %>%
+  summarise(sum=sum(obligatedamount, na.rm=true)/1e9)
+tmp3 <- tmp2 %>% # get state totals
+  group_by(stabbr) %>%
+  summarise(sum=sum(sum, na.rm=true)/1e9) %>%
+  mutate(topdepts="ALL")
+tmp4 <- rbind(tmp2, tmp3) %>%
+  mutate(pct=sum / sum(sum, na.rm=TRUE) * 100) %>%
+  select(-sum) %>%
+  spread(topdepts, pct) %>% 
+  arrange(-ALL)
+idvars <- c("stabbr", "ALL")
+tmp4 <- tmp4[, c(idvars, setdiff(names(tmp4), idvars))]
+# numcolwise(sum)(as.data.frame(tmp4[,2:12]))
+
+library(xtable)
+ttmp <- xtable(tmp4, digits=1)
+print(ttmp, type="html")
+
+```
 
 

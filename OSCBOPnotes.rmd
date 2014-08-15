@@ -69,16 +69,22 @@ options(width=160) # set to 120 for html output, 80 for pdf output
 # dropdir <- "E:\\Dropbox\\PEW\\"
 
 cptr <- "PC"
-cptr <- "LAPTOP"
+# cptr <- "LAPTOP"
 
 if(cptr=="PC"){
-  bopd <- "E:\\Data\\Projects\\OSC BOP\\"
-  fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
+  dropd <- "E:\\Dropbox (Personal)\\" # dropbox
+  sdatd <- paste0(dropd, "sharedData\\")
+  bopd <- paste0(sdatd, "Data for projects\\OSCBOP project\\")
+  rfiles <- paste0(bopd, "rfiles\\")
+  
+#   bopd <- "E:\\Data\\Projects\\OSC BOP\\"
+#   fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
 
-  usasd <- "E:\\Data\\Federal budget and spending\\USASpending\\"
-  grantsd <- paste0(usasd, "Grants\\")
-  dpayd <- paste0(usasd, "DirectPayments\\")
-  contrd <- ""
+  usasd <- paste0(bopd, "USASpending\\")
+  # E:\Dropbox (Personal)\sharedData\Data for projects\OSC BOP project\USASpending
+#   grantsd <- paste0(usasd, "Grants\\")
+#   dpayd <- paste0(usasd, "DirectPayments\\")
+#   contrd <- paste0(sdatd, "OSCBOP")
 
   ffisd <- "E:\\Data\\Federal budget and spending\\FFIS\\"
 } else {
@@ -151,12 +157,12 @@ censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
-```{r directpay, child=paste0("subDirectPay.Rmd"), eval=TRUE}
+```{r directpay, child=paste0("subDirectPay.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
 
-```{r contracts, child=paste0("subContracts.Rmd"), eval=FALSE}
+```{r contracts, child=paste0("subContracts.Rmd"), eval=TRUE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
