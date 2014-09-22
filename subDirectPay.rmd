@@ -36,13 +36,14 @@ author: "Don Boyd"
 ```{r dpdata, eval=FALSE}
 # note re bullets above - use 2 indents for each new bullet levl
 # get ALL direct payments data and save subset so that we can save time; eventually try to do with caching
-system.time(df <- readRDS(paste0(dpayd, "directpay2013.rds"))) # this seems to be slow so avoid doing each time
+system.time(df <- readRDS(paste0(dpayd, "directpay2013.rds"))) # this seems to be slow so avoid doing each time - about 40 secs
 ht(df)
 names(df)
 grep("state", names(df), value=TRUE)
 grep("recip", names(df), value=TRUE)
 
-vnum <- 65; df[1:5, vnum:(vnum+4)]
+vnum <- 63; df[1:5, vnum:(vnum+4)] # look at selected vars
+
 vars <- c("cfda_program_num", "cfda_program_title", " account_title", "agency_code", "agency_name", "record_type", "project_description", "recip_cat_type", "recipient_type", "assistance_type", "principal_place_code", "principal_place_state", "principal_place_state_code", "recipient_state_code", "fed_funding_amount")
 
 subdf <- df %>% select(eval(uvf(vars)))
@@ -65,7 +66,7 @@ Totals from detailed data and from online USASpending (screenshot 8/8/2014)
 
 Total direct payments in $ millions from detailed data (file dated 7/15/2014) `r sum(df$fed_funding_amount, na.rm=TRUE)/1e9`
 
-<img src="E:\\Dropbox\\R\\RPrograms\\OSCBOP\\Images\\usaspendingfy2013bytype.jpg" />
+<img src="E:\\\Dropbox (Personal)\\RPrograms PC\\OSCBOP\\Images\\usaspendingfy2013bytype.jpg" />
 
 ## Quick look at top direct payments by various groupings
 
@@ -147,6 +148,46 @@ tmp <- df %>% group_by(project_description) %>%
   head(10)
 kable(tmp, digits=2)
 
+# Try to compare to BEA Personal Current Transfer Receipts categories
+# Social security
+# Railroad retirement
+# Medicare, Military medical insurance
+# Earned Income Tax Credit (EITC)
+# Supplemental Nutrition Assistance Program (SNAP)
+# Veterans Benefits except “Other”
+# Receipts of nonprofits from federal government
+# NOTE: USASpending has NO military medical, no EITC
+cat("\nTop direct payments by major BEA PCTR groupings")
+cat("Note that there are no items for unemployment insurance (perhaps it is paid to states?) or EITC.")
+cat("Note that SNAP is low. Why?")
+df1 <- count(df, c("cfda_program_num", "cfda_program_title"))
+# txt <- "comp" # mili social eitc earn supplem food railr veter unemp worker comp
+# df1[grep(txt, df1$cfda_program_title, ignore.case=TRUE), ]
+
+tmp1 <- df %>% mutate(socsecRR=cfda_program_num %in% c("57.001", "57.AAA", "96.001", "96.002", "96.004"),
+                      medical=cfda_program_num %in% c("93.770", "93.773", "93.774"), 
+                      snap=cfda_program_num %in% c("10.551"),
+                      ssi=cfda_program_num %in% c("96.006"),
+                      veterans=cfda_program_num %in% c("64.028", "64.100", "64.101", "64.104", "64.105", "64.106",
+                                                       "64.109", "64.110", "64.116", "64.120", "64.128"))
+tmp1$beagroup <- "other"
+tmp1$beagroup[tmp1$socsecRR] <- "socsecRR"
+tmp1$beagroup[tmp1$medical] <- "medicare"
+tmp1$beagroup[tmp1$snap] <- "snap"
+tmp1$beagroup[tmp1$ssi] <- "ssi"
+tmp1$beagroup[tmp1$veterans] <- "veterans"
+# tmp1 %>% group_by(beagroup) %>%
+#   summarise(totfed=sum(fed_funding_amount, na.rm=TRUE) / 1e9)
+
+tmp2 <- tmp1 %>% group_by(beagroup) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/ 1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(10)
+kable(tmp2, digits=2)
+
+
 cat("\nTop direct payments by principal_place_state_code")
 tmp <- df %>% group_by(principal_place_state_code) %>%
   summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
@@ -174,6 +215,17 @@ tmp <- df %>% filter(recipient_state_code=="NY") %>%
   mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
   head(15)
 kable(tmp, digits=2)
+
+cat("\nTop NY recip direct payments by cfda")
+tmp <- df %>% filter(cfda_program_num=="17.225") %>%
+  group_by(cfda_program_title) %>%
+  summarise(fed_funding_amount=sum(fed_funding_amount, na.rm=true)/1e9) %>%
+  arrange(-fed_funding_amount) %>%
+  ungroup() %>%
+  mutate(cumsum=cumsum(fed_funding_amount), pct=fed_funding_amount / sum(fed_funding_amount, na.rm=TRUE) * 100, cumpct=cumsum(pct)) %>%  
+  head(15)
+kable(tmp, digits=2)
+
 
 ```
 
@@ -399,7 +451,7 @@ print(ttmp, type="html")
 
 ### Total Medicare spending
 Here are Medicare outlays in the federal budget 
-<img src="E:\\Dropbox\\R\\RPrograms\\OSCBOP\\Images\\MedicareTab25-12.jpg" />
+<img src="E:\\\Dropbox (Personal)\\RPrograms PC\\OSCBOP\\Images\\MedicareTab25-12.jpg" />
 
 And here's the summary of obligations in USASpending
 ```{r}
@@ -414,7 +466,7 @@ cat(paste0("Grand Medicare sum from USASpending:  ", sum(tmp$fed_funding_amount)
 ### Possible sources of information to use to allocate Medicare spending by state
 
 Kaiser uses CMS State Health Expenditures (http://kff.org/medicare/state-indicator/medicare-spending-by-residence/)
-<img src="E:\\Dropbox\\R\\RPrograms\\OSCBOP\\Images\\cmsshe.png" />
+<img src="E:\\\Dropbox (Personal)\\RPrograms PC\\OSCBOP\\Images\\cmsshe.png" />
 But that is only available through 2009 so it would be a little dated
 
 

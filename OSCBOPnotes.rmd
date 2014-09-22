@@ -9,27 +9,34 @@ output:
 ---
 
 <!--- 
-http://www.molecularecologist.com/2013/11/using-github-with-r-and-rstudio/
-
-
-
-
-TO STOP TRACKING A FILE:
-http://git-scm.com/docs/gitignore
-add the filename to the gitignore file for the project
-
 To stop tracking a file that is currently tracked, use 'git rm --cached'.
 For example - open the git gui or bash (right-click from Windows Explorer in the project directory) and do
     git rm --cached OSCBOPnotes.html
   where what follows "cached" is the name of the file to stop tracking
   also can do ff (quotes essential):
     git rm --cached "*.html"
-
-rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", output_dir="E:\\Temp", intermediates_dir="E:\\Temp")
-
-rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document")
-
 -->
+
+
+```{r, eval=FALSE, echo=FALSE}
+# use this to create a dated output file - just run the lines below manually
+# rmdfn <- "E:\\Dropbox (Personal)\\RPrograms PC\\OSCBOP\\OSCBOPnotes.Rmd"  # input rmarkdown code (this file)
+# outfn <- paste0("OSCBOPnotes_", format(Sys.time(), "%Y-%m-%d"), ".html")
+# outfn <- paste0("Directpay_", format(Sys.time(), "%Y-%m-%d"), ".html")
+# rmarkdown::render(rmdfn, output_format="html_document", output_file=outfn)
+# rmarkdown::render("E:/R/RPrograms/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", output_dir="E:\\Temp", intermediates_dir="E:\\Temp")
+
+# This works
+rmarkdown::render("E:/Dropbox (Personal)/RPrograms PC/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", output_dir="E:\\Temp", intermediates_dir="E:\\Temp")
+
+# This works - use a chosen output filename
+# outfn <- paste0("OSCBOPnotes_", format(Sys.time(), "%Y-%m-%d"), ".html")
+outfn <- paste0("Directpay_", format(Sys.time(), "%Y-%m-%d"), ".html")
+rmarkdown::render("E:/Dropbox (Personal)/RPrograms PC/OSCBOP/OSCBOPnotes.Rmd", output_format ="html_document", 
+                  output_dir="E:\\Temp", intermediates_dir="E:\\Temp", output_file=outfn)
+
+```
+
 
 ```{r globalOptions, include=FALSE}
 # include=FALSE means don't put chunk output in the final output document, but still do run the code
@@ -47,6 +54,8 @@ library(reshape2)
 library(tidyr)
 library(dplyr) # always load AFTER plyr
 library(knitr)
+library(lubridate)
+library(stringr)
 
 # next 2 are so that we can read and display screenshots, etc.
 library(jpeg)
@@ -78,16 +87,16 @@ if(cptr=="PC"){
   rfiles <- paste0(bopd, "rfiles\\")
   
 #   bopd <- "E:\\Data\\Projects\\OSC BOP\\"
-#   fbdbd <- "E:\\Data\\Federal budget and spending\\FFY 2015\\Database\\"
+  fedbudd <- paste0(datdir, "Federal budget and spending\\")
+  fbdbd <- paste0(fedbudd, "FFY 2015\\Database\\")
 
-  usasd <- paste0(bopd, "USASpending\\")
-  # E:\Dropbox (Personal)\sharedData\Data for projects\OSC BOP project\USASpending
-#   grantsd <- paste0(usasd, "Grants\\")
-#   dpayd <- paste0(usasd, "DirectPayments\\")
-#   contrd <- paste0(sdatd, "OSCBOP")
-
+  # set version date for USASpending?
+  usasd <- paste0(fedbudd, "USASpending\\")
+  grantsd <- paste0(usasd, "Grants\\")
+  dpayd <- paste0(usasd, "DirectPayments\\")
   ffisd <- "E:\\Data\\Federal budget and spending\\FFIS\\"
 } else {
+  # still need to fix this up
   sdatd <- "C:\\Users\\Don\\Dropbox (Personal)\\sharedData\\"
   usasd <- paste0(sdatd, "Data for projects\\Federal budget and spending\\USASpending\\")    
 }
@@ -105,7 +114,7 @@ fncon <- "_All_Contracts_Full_"
 fnloans <- "_All_Loans_Full_"
 fninsur <- "_All_Insurance_Full_"
 
-usasver <- "20140515" # version number of latest set of USASpending files
+usasver <- "20140915" # version number of latest set of USASpending files
 
 
 # API keys
@@ -129,15 +138,7 @@ censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 
 
 ```{r prepdata, eval=FALSE}
-# download any needed files
-
-
-# ```{r fig.width=1, fig.height=10}
-# library(png)
-# library(grid)
-# img <- readPNG(path/to/your/image)
-#  grid.raster(img)
-# ```
+# create slimmed down versions of data
 
 ```
 
@@ -157,12 +158,12 @@ censusapikey <- "b27cb41e46ffe3488af186dd80c64dce66bd5e87"
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
-```{r directpay, child=paste0("subDirectPay.Rmd"), eval=FALSE}
+```{r directpay, child=paste0("subDirectPay.Rmd"), eval=TRUE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
 
-```{r contracts, child=paste0("subContracts.Rmd"), eval=TRUE}
+```{r contracts, child=paste0("subContracts.Rmd"), eval=FALSE}
 # don't put anything else here - it WILL NOT BE RUN!
 ```
 
